@@ -23,7 +23,9 @@
 //
 // Every multiplier is rounded to 4 decimals before the implied value is taken, so the number
 // board.json carries is exactly the number the dashboard recomputes from the same components.
-// No protocol name is ever special-cased: one function scores every row.
+// No protocol name is ever special-cased: one function scores every row. The board's early rows
+// apply the watchlist's own product tests (see isTokenProduct): a wrapped, staked or bridged
+// product of a token that already trades is not a launch waiting to happen.
 
 /** The snapshot's protocol entry: exactly the ten fields the sealed input carries. */
 export interface SnapshotProtocol {
@@ -189,9 +191,29 @@ export function isPreToken(p: SnapshotProtocol): boolean {
 /** DefiLlama's version-marker rule: a name ending in a release is a pool of another protocol. */
 const VERSIONED = /\s(V\d+(\.\d+)?|v\d+(\.\d+)?|\d+\.\d+)$/;
 
-/** Whether a pre-token protocol is one the board may rank: not an exchange, not a versioned pool. */
+/** The categories the watchlist's own rule keeps out: products of a protocol, not protocols. */
+const PRODUCT_CATEGORIES = new Set(['Bridge', 'Canonical Bridge', 'Liquid Staking', 'Liquid Restaking', 'Restaked BTC', 'CEX']);
+
+/** The exchange names the watchlist's rule keeps out: their products are the exchange's, not a launch. */
+const EXCHANGE_PREFIX = /^(Binance|Coinbase|Bybit|Kraken|Bitget|OKX|Bitfinex|Gemini)\b/;
+
+/**
+ * Whether a protocol reads as a wrapped, staked or bridged product of a token that already
+ * trades, by the same tests the snapshot's watchlist states: a product category, a whole word
+ * wrapped, staked or staking in the name, or an exchange's name at its head. Such a product is
+ * not waiting on a launch of its own (WBTC is Bitcoin on Ethereum), so the radar does not rank
+ * it; the watchlist itself is read as given and never retested.
+ */
+export function isTokenProduct(p: SnapshotProtocol): boolean {
+  if (p.category !== null && PRODUCT_CATEGORIES.has(p.category)) return true;
+  if (/\b(wrapped|staked|staking)\b/i.test(p.name)) return true;
+  if (EXCHANGE_PREFIX.test(p.name)) return true;
+  return false;
+}
+
+/** Whether a pre-token protocol is one the board may rank: not an exchange, not a versioned pool, not a token product. */
 export function isRankable(p: SnapshotProtocol): boolean {
-  return isPreToken(p) && p.category !== 'CEX' && !VERSIONED.test(p.name);
+  return isPreToken(p) && p.category !== 'CEX' && !VERSIONED.test(p.name) && !isTokenProduct(p);
 }
 
 /** The first chain a protocol names, or null when it names none. */
@@ -548,7 +570,7 @@ export function farmSteps(p: SnapshotProtocol, age: number | null): FarmStep[] {
         : '';
   steps.push({
     text: `Keep a weekly cadence of ${book.weekly} on ${p.name}, in the same wallet every time.${growthNote}`,
-    cost: 'about $2 a week in gas on most chains, nearer $10 on Ethereum',
+    cost: `${gasNote(chain)}, once a week`,
     time: '10 minutes a week',
   });
   steps.push({
