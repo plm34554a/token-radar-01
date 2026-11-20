@@ -27,6 +27,7 @@
     if (n === null || n === undefined || !isFinite(n)) return 'n/a';
     return (n > 0 ? '+' : '') + n.toFixed(2) + '%';
   }
+  function peerWord(n) { return n === 1 ? '1 peer' : n + ' peers'; }
   function fmtAge(days) {
     if (days === null || days === undefined) return 'unknown';
     if (days >= 365) return (days / 365).toFixed(1) + 'y';
@@ -345,8 +346,8 @@
       el('h3', { text: 'Implied value, step by step' }),
       el('div', { class: 'equation' },
         el('div', null, el('span', { text: 'TVL (snapshot)' }), el('b', { class: 'num', text: fmtUsd(row.tvl_usd) })),
-        el('div', null, el('span', { text: 'Peer multiple \u00b7 ' + (row.category || 'Uncategorised') + ', ' + m.category_peers + ' peers' }), el('b', { class: 'num', text: m.peer_multiple.toFixed(4) + '\u00d7' })),
-        el('div', null, el('span', { text: 'Chain factor \u00b7 ' + (row.chains && row.chains.length ? row.chains[0] : 'no chain') + ', ' + m.chain_peers + ' peers' }), el('b', { class: 'num', text: m.chain_factor.toFixed(4) + '\u00d7' })),
+        el('div', null, el('span', { text: 'Peer multiple \u00b7 ' + (row.category || 'Uncategorised') + ', ' + peerWord(m.category_peers) }), el('b', { class: 'num', text: m.peer_multiple.toFixed(4) + '\u00d7' })),
+        el('div', null, el('span', { text: 'Chain factor \u00b7 ' + (row.chains && row.chains.length ? row.chains[0] : 'no chain') + ', ' + peerWord(m.chain_peers) }), el('b', { class: 'num', text: m.chain_factor.toFixed(4) + '\u00d7' })),
         el('div', null, el('span', { text: 'Growth \u00b7 7d ' + fmtPct(row.change_7d) }), el('b', { class: 'num', text: m.growth_multiplier.toFixed(4) + '\u00d7' })),
         el('div', null, el('span', { text: 'Maturity \u00b7 tokenless ' + fmtAge(row.age_days) }), el('b', { class: 'num', text: m.maturity_multiplier.toFixed(4) + '\u00d7' })),
         el('div', { class: 'total' }, el('span', { text: 'Implied value' }), el('b', { class: 'num', text: fmtUsd(row.implied_value_usd) }))
